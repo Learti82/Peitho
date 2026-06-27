@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { clsx } from "clsx";
-import { LayoutDashboard, Settings, LogOut, FileText } from "lucide-react";
+import { LayoutDashboard, Settings, LogOut } from "lucide-react";
 import { useClerk } from "@clerk/nextjs";
 
 interface NavbarProps {
@@ -39,8 +40,15 @@ export function Navbar({ userEmail, orgName }: NavbarProps) {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link href="/dashboard" className="flex items-center gap-2.5 group">
-            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gold/20 border border-gold/40">
-              <FileText className="h-4 w-4 text-gold" />
+            <div className="flex items-center justify-center bg-white rounded-lg p-1">
+              <Image
+                src="/logo.png"
+                alt="Peitho"
+                width={36}
+                height={36}
+                className="h-9 w-9 object-contain"
+                priority
+              />
             </div>
             <div>
               <span className="text-xl font-bold text-gold tracking-wide">

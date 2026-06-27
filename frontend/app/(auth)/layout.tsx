@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { FileText } from "lucide-react";
+import Image from "next/image";
 
 export const metadata: Metadata = {
   title: "Kyçu",
@@ -14,15 +14,17 @@ export default function AuthLayout({
     <div className="min-h-screen bg-gradient-to-br from-primary-900 via-primary to-primary-700 flex flex-col items-center justify-center p-4">
       {/* Logo */}
       <div className="mb-8 flex flex-col items-center gap-3">
-        <div className="flex items-center justify-center w-14 h-14 rounded-2xl bg-white/10 border border-white/20 backdrop-blur-sm">
-          <FileText className="h-7 w-7 text-gold" />
+        <div className="flex items-center justify-center bg-white rounded-2xl p-2">
+          <Image
+            src="/logo.png"
+            alt="Peitho"
+            width={96}
+            height={96}
+            className="h-20 w-20 object-contain"
+            priority
+          />
         </div>
-        <div className="text-center">
-          <h1 className="text-3xl font-bold text-gold tracking-wide">Peitho</h1>
-          <p className="text-primary-200 text-sm mt-0.5">
-            Platforma e Tenderëve
-          </p>
-        </div>
+        <p className="text-primary-200 text-sm">Platforma e Tenderëve</p>
       </div>
 
       {/* Card */}
