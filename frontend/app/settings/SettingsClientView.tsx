@@ -2,7 +2,8 @@
 
 import { useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
+import { useClerk } from "@clerk/nextjs";
+import { useSupabaseClient } from "@/lib/supabase/client";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
@@ -26,6 +27,8 @@ interface SettingsClientViewProps {
 
 export function SettingsClientView({ user, organization }: SettingsClientViewProps) {
   const router = useRouter();
+  const supabase = useSupabaseClient();
+  const { signOut, openUserProfile } = useClerk();
 
   // Org form state
   const [orgForm, setOrgForm] = useState({
@@ -40,11 +43,6 @@ export function SettingsClientView({ user, organization }: SettingsClientViewPro
   const [orgLoading, setOrgLoading] = useState(false);
   const [orgMessage, setOrgMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
-  // Password form state
-  const [pwForm, setPwForm] = useState({ newPassword: "", confirmPassword: "" });
-  const [pwLoading, setPwLoading] = useState(false);
-  const [pwMessage, setPwMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
-
   function handleOrgChange(field: keyof typeof orgForm) {
     return (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
       setOrgForm((prev) => ({ ...prev, [field]: e.target.value }));
@@ -57,7 +55,6 @@ export function SettingsClientView({ user, organization }: SettingsClientViewPro
     setOrgMessage(null);
 
     try {
-      const supabase = createClient();
       const { error } = await supabase
         .from("organizations")
         .upsert({
@@ -84,45 +81,8 @@ export function SettingsClientView({ user, organization }: SettingsClientViewPro
     }
   }
 
-  async function handlePasswordSubmit(e: FormEvent) {
-    e.preventDefault();
-    setPwMessage(null);
-
-    if (pwForm.newPassword !== pwForm.confirmPassword) {
-      setPwMessage({ type: "error", text: "Fjalëkalimet nuk përputhen." });
-      return;
-    }
-
-    if (pwForm.newPassword.length < 8) {
-      setPwMessage({ type: "error", text: "Fjalëkalimi duhet të ketë të paktën 8 karaktere." });
-      return;
-    }
-
-    setPwLoading(true);
-
-    try {
-      const supabase = createClient();
-      const { error } = await supabase.auth.updateUser({
-        password: pwForm.newPassword,
-      });
-
-      if (error) {
-        setPwMessage({ type: "error", text: `Gabim: ${error.message}` });
-      } else {
-        setPwMessage({ type: "success", text: "Fjalëkalimi u ndryshua me sukses!" });
-        setPwForm({ newPassword: "", confirmPassword: "" });
-      }
-    } catch {
-      setPwMessage({ type: "error", text: "Ndodhi një gabim i papritur." });
-    } finally {
-      setPwLoading(false);
-    }
-  }
-
   async function handleLogout() {
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    router.push("/login");
+    await signOut(() => router.push("/login"));
   }
 
   return (
@@ -214,49 +174,23 @@ export function SettingsClientView({ user, organization }: SettingsClientViewPro
         </form>
       </Card>
 
-      {/* Change Password */}
+      {/* Account / Password (managed by Clerk) */}
       <Card>
         <CardHeader>
           <div className="flex items-center gap-2">
             <Lock className="h-5 w-5 text-primary" />
-            <CardTitle>Ndrysho Fjalëkalimin</CardTitle>
+            <CardTitle>Llogaria dhe Siguria</CardTitle>
           </div>
         </CardHeader>
-
-        {pwMessage && (
-          <Alert
-            variant={pwMessage.type === "success" ? "success" : "error"}
-            className="mb-4"
-            onDismiss={() => setPwMessage(null)}
-          >
-            {pwMessage.text}
-          </Alert>
-        )}
-
-        <form onSubmit={handlePasswordSubmit} className="space-y-4">
-          <Input
-            label="Fjalëkalimi i Ri"
-            type="password"
-            value={pwForm.newPassword}
-            onChange={(e) => setPwForm((p) => ({ ...p, newPassword: e.target.value }))}
-            required
-            placeholder="Të paktën 8 karaktere"
-            autoComplete="new-password"
-          />
-          <Input
-            label="Konfirmo Fjalëkalimin"
-            type="password"
-            value={pwForm.confirmPassword}
-            onChange={(e) => setPwForm((p) => ({ ...p, confirmPassword: e.target.value }))}
-            required
-            placeholder="Përsëritni fjalëkalimin"
-            autoComplete="new-password"
-          />
-          <Button type="submit" variant="outline" isLoading={pwLoading}>
+        <div className="flex items-center justify-between">
+          <p className="text-sm text-gray-500">
+            Ndryshoni email-in, fjalëkalimin ose aktivizoni verifikimin me dy hapa.
+          </p>
+          <Button variant="outline" onClick={() => openUserProfile()} size="md">
             <Lock className="h-4 w-4 mr-2" />
-            Ndrysho Fjalëkalimin
+            Menaxho Llogarinë
           </Button>
-        </form>
+        </div>
       </Card>
 
       {/* Logout */}

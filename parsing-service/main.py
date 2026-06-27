@@ -29,6 +29,20 @@ logger = logging.getLogger(__name__)
 SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
 SUPABASE_SERVICE_ROLE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
 FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:3000")
+# Clerk Frontend API URL, e.g. https://your-app.clerk.accounts.dev
+CLERK_JWT_ISSUER = os.environ.get("CLERK_JWT_ISSUER", "").rstrip("/")
+
+_jwks_client = None
+
+
+def _get_jwks_client():
+    global _jwks_client
+    if _jwks_client is None:
+        if not CLERK_JWT_ISSUER:
+            raise HTTPException(status_code=500, detail="CLERK_JWT_ISSUER not configured")
+        from jwt import PyJWKClient
+        _jwks_client = PyJWKClient(f"{CLERK_JWT_ISSUER}/.well-known/jwks.json")
+    return _jwks_client
 
 
 # ──────────────────────────────────────────────────────────────
@@ -77,18 +91,27 @@ app.add_middleware(
 # Helpers
 # ──────────────────────────────────────────────────────────────
 
-def _validate_jwt(jwt_token: str) -> str:
+def _validate_jwt(token: str) -> str:
     """
-    Validate a Supabase JWT and return the user ID.
-    Uses the Supabase admin API to verify the token.
+    Validate a Clerk session JWT and return the Clerk user id (the "sub" claim).
+    The token signature is verified against Clerk's JWKS.
     Raises HTTPException 401 if invalid.
     """
+    import jwt as pyjwt
+
     try:
-        sb = get_supabase()
-        response = sb.auth.get_user(jwt_token)
-        if response is None or response.user is None:
-            raise HTTPException(status_code=401, detail="Invalid or expired token")
-        return response.user.id
+        signing_key = _get_jwks_client().get_signing_key_from_jwt(token)
+        claims = pyjwt.decode(
+            token,
+            signing_key.key,
+            algorithms=["RS256"],
+            issuer=CLERK_JWT_ISSUER or None,
+            options={"verify_aud": False},
+        )
+        sub = claims.get("sub")
+        if not sub:
+            raise HTTPException(status_code=401, detail="Invalid token: missing subject")
+        return sub
     except HTTPException:
         raise
     except Exception as e:
@@ -108,7 +131,7 @@ def _upload_pdf_to_storage(
     """
     storage_path = f"{organization_id}/{tender_id}/original.pdf"
     try:
-        supabase.storage.from_("tender-documents").upload(
+        supabase.storage.from_("tender-pdfs").upload(
             path=storage_path,
             file=file_bytes,
             file_options={"content-type": "application/pdf", "upsert": "true"},
@@ -227,14 +250,14 @@ async def health():
 @app.post("/parse-tender", response_model=ParseResponse)
 async def parse_tender(
     file: UploadFile = File(..., description="PDF tender document"),
-    organization_id: str = Form(..., description="Organization UUID"),
-    supabase_jwt: str = Form(..., description="Supabase user JWT for authentication"),
+    organization_id: str = Form(..., description="Clerk user id (organization id)"),
+    token: str = Form(..., description="Clerk session JWT for authentication"),
 ):
     """
     Parse a tender PDF and store all extracted data in Supabase.
 
     Steps:
-    1. Validate Supabase JWT
+    1. Validate Clerk JWT
     2. Save PDF to temp file
     3. Extract text (PyMuPDF + OCR fallback)
     4. Extract requirements via Claude API
@@ -243,7 +266,7 @@ async def parse_tender(
     7. Return ParseResponse
     """
     # 1. Validate JWT
-    user_id = _validate_jwt(supabase_jwt)
+    user_id = _validate_jwt(token)
     if user_id != organization_id:
         raise HTTPException(
             status_code=403,

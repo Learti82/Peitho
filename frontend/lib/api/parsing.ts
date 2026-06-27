@@ -3,7 +3,7 @@
 export interface ParseTenderOptions {
   file: File;
   organizationId: string;
-  supabaseJwt: string;
+  token: string;
   onProgress?: (stage: string) => void;
 }
 
@@ -27,14 +27,14 @@ const PARSING_SERVICE_URL =
 export async function parseTender(
   options: ParseTenderOptions
 ): Promise<ParseTenderResult> {
-  const { file, organizationId, supabaseJwt, onProgress } = options;
+  const { file, organizationId, token, onProgress } = options;
 
   onProgress?.("Duke ngarkuar dokumentin...");
 
   const formData = new FormData();
   formData.append("file", file);
   formData.append("organization_id", organizationId);
-  formData.append("supabase_jwt", supabaseJwt);
+  formData.append("token", token);
 
   onProgress?.("Duke nxjerrë tekstin...");
 

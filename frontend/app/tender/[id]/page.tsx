@@ -1,5 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
+import { auth, currentUser } from "@clerk/nextjs/server";
 import { createClient } from "@/lib/supabase/server";
 import { Navbar } from "@/components/layout/Navbar";
 import { RequirementGroup } from "@/components/tender/RequirementGroup";
@@ -52,25 +53,25 @@ interface PageProps {
 
 export default async function TenderPage({ params }: PageProps) {
   const { id } = await params;
+  const { userId } = await auth();
+  if (!userId) redirect("/login");
+
+  const user = await currentUser();
+  const userEmail = user?.primaryEmailAddress?.emailAddress;
+
   const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) redirect("/login");
 
   const { data: org } = await supabase
     .from("organizations")
     .select("name")
-    .eq("id", user.id)
-    .single();
+    .eq("id", userId)
+    .maybeSingle();
 
   const { data: tender, error: tenderError } = await supabase
     .from("tenders")
     .select("*")
     .eq("id", id)
-    .eq("organization_id", user.id)
+    .eq("organization_id", userId)
     .single();
 
   if (tenderError || !tender) notFound();
@@ -83,14 +84,15 @@ export default async function TenderPage({ params }: PageProps) {
 
   const grouped = groupByCategory(requirements ?? []);
 
-  // Get public URL for PDF (if bucket is public, otherwise generate signed URL)
-  const { data: pdfUrl } = supabase.storage
-    .from("tender-documents")
-    .getPublicUrl(tender.pdf_storage_path);
+  // Generate a short-lived signed URL for the private PDF
+  const { data: pdfUrlData } = await supabase.storage
+    .from("tender-pdfs")
+    .createSignedUrl(tender.pdf_storage_path, 3600);
+  const pdfUrl = { publicUrl: pdfUrlData?.signedUrl ?? "" };
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar userEmail={user.email} orgName={org?.name} />
+      <Navbar userEmail={userEmail} orgName={org?.name} />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Breadcrumb */}

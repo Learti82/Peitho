@@ -1,26 +1,18 @@
-import { createServerClient } from "@supabase/ssr";
-import { cookies } from "next/headers";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
+import { auth } from "@clerk/nextjs/server";
 
+/**
+ * Server-side Supabase client authenticated with the current Clerk session.
+ * The Clerk session token is forwarded to Supabase, so Row Level Security
+ * policies that read `auth.jwt()->>'sub'` see the Clerk user id.
+ */
 export async function createClient() {
-  const cookieStore = await cookies();
-
-  return createServerClient(
+  return createSupabaseClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll();
-        },
-        setAll(cookiesToSet: { name: string; value: string; options?: object }[]) {
-          try {
-            cookiesToSet.forEach(({ name, value, options }: { name: string; value: string; options?: object }) =>
-              cookieStore.set(name, value, options)
-            );
-          } catch {
-            // setAll called from a Server Component — safe to ignore
-          }
-        },
+      async accessToken() {
+        return (await (await auth()).getToken()) ?? null;
       },
     }
   );

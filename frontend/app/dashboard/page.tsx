@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { auth, currentUser } from "@clerk/nextjs/server";
 import { createClient } from "@/lib/supabase/server";
 import { Navbar } from "@/components/layout/Navbar";
 import { Button } from "@/components/ui/Button";
@@ -32,33 +33,36 @@ function DeadlineCell({ deadline }: { deadline: string | null }) {
 }
 
 export default async function DashboardPage() {
+  const { userId } = await auth();
+  if (!userId) redirect("/login");
+
+  const user = await currentUser();
+  const userEmail = user?.primaryEmailAddress?.emailAddress;
+
   const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/login");
-  }
 
   // Fetch organization
   const { data: org } = await supabase
     .from("organizations")
     .select("name")
-    .eq("id", user.id)
-    .single();
+    .eq("id", userId)
+    .maybeSingle();
+
+  // First-time users without a profile go through onboarding
+  if (!org) {
+    redirect("/onboarding");
+  }
 
   // Fetch tenders sorted by deadline
   const { data: tenders, error } = await supabase
     .from("tenders")
     .select("*")
-    .eq("organization_id", user.id)
+    .eq("organization_id", userId)
     .order("submission_deadline", { ascending: true, nullsFirst: false });
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar userEmail={user.email} orgName={org?.name} />
+      <Navbar userEmail={userEmail} orgName={org?.name} />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}

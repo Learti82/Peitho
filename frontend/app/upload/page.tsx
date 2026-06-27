@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
+import { useAuth, useUser } from "@clerk/nextjs";
 import { parseTender } from "@/lib/api/parsing";
 import { Navbar } from "@/components/layout/Navbar";
 import { UploadDropzone } from "@/components/tender/UploadDropzone";
@@ -23,26 +23,20 @@ const PARSING_STAGES = [
 
 export default function UploadPage() {
   const router = useRouter();
+  const { userId, getToken } = useAuth();
+  const { user } = useUser();
+  const userEmail = user?.primaryEmailAddress?.emailAddress;
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isParsing, setIsParsing] = useState(false);
   const [currentStage, setCurrentStage] = useState("");
   const [stageIndex, setStageIndex] = useState(0);
   const [error, setError] = useState<string | null>(null);
-  const [userEmail, setUserEmail] = useState<string>();
 
   useEffect(() => {
     // Listen for dropzone clear event
     const handler = () => setSelectedFile(null);
     window.addEventListener("dropzone:clear", handler);
     return () => window.removeEventListener("dropzone:clear", handler);
-  }, []);
-
-  useEffect(() => {
-    // Get user email for navbar
-    const supabase = createClient();
-    supabase.auth.getUser().then(({ data }) => {
-      setUserEmail(data.user?.email);
-    });
   }, []);
 
   // Animate through stages while parsing
@@ -67,20 +61,17 @@ export default function UploadPage() {
     setStageIndex(0);
 
     try {
-      const supabase = createClient();
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+      const token = await getToken();
 
-      if (!session) {
+      if (!token || !userId) {
         router.push("/login");
         return;
       }
 
       const result = await parseTender({
         file: selectedFile,
-        organizationId: session.user.id,
-        supabaseJwt: session.access_token,
+        organizationId: userId,
+        token,
         onProgress: (stage) => setCurrentStage(stage),
       });
 

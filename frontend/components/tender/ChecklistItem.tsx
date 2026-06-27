@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { clsx } from "clsx";
 import { ChevronDown, FileText, AlertCircle } from "lucide-react";
 import type { ChecklistItemWithRequirement, ChecklistStatus } from "@/lib/supabase/types";
-import { createClient } from "@/lib/supabase/client";
+import { useSupabaseClient } from "@/lib/supabase/client";
 import { Textarea } from "@/components/ui/Textarea";
 import { ChecklistStatusBadge, CHECKLIST_STATUS_LABELS } from "@/components/ui/Badge";
 
@@ -28,6 +28,7 @@ const STATUS_COLORS: Record<ChecklistStatus, string> = {
 };
 
 export function ChecklistItem({ item, onUpdated }: ChecklistItemProps) {
+  const supabase = useSupabaseClient();
   const [isExpanded, setIsExpanded] = useState(false);
   const [status, setStatus] = useState<ChecklistStatus>(item.status);
   const [notes, setNotes] = useState(item.notes ?? "");
@@ -37,7 +38,6 @@ export function ChecklistItem({ item, onUpdated }: ChecklistItemProps) {
   async function handleStatusChange(newStatus: ChecklistStatus) {
     setStatus(newStatus);
     startTransition(async () => {
-      const supabase = createClient();
       await supabase
         .from("checklist_items")
         .update({ status: newStatus })
@@ -48,7 +48,6 @@ export function ChecklistItem({ item, onUpdated }: ChecklistItemProps) {
 
   async function handleNotesSave() {
     startTransition(async () => {
-      const supabase = createClient();
       await supabase
         .from("checklist_items")
         .update({ notes })

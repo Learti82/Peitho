@@ -1,5 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
+import { auth, currentUser } from "@clerk/nextjs/server";
 import { createClient } from "@/lib/supabase/server";
 import { Navbar } from "@/components/layout/Navbar";
 import { ChecklistClientView } from "./ChecklistClientView";
@@ -12,25 +13,25 @@ interface PageProps {
 
 export default async function ChecklistPage({ params }: PageProps) {
   const { id } = await params;
+  const { userId } = await auth();
+  if (!userId) redirect("/login");
+
+  const user = await currentUser();
+  const userEmail = user?.primaryEmailAddress?.emailAddress;
+
   const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) redirect("/login");
 
   const { data: org } = await supabase
     .from("organizations")
     .select("name")
-    .eq("id", user.id)
-    .single();
+    .eq("id", userId)
+    .maybeSingle();
 
   const { data: tender, error: tenderError } = await supabase
     .from("tenders")
     .select("id, title, contracting_authority, submission_deadline, completion_percentage, organization_id")
     .eq("id", id)
-    .eq("organization_id", user.id)
+    .eq("organization_id", userId)
     .single();
 
   if (tenderError || !tender) notFound();
@@ -48,7 +49,7 @@ export default async function ChecklistPage({ params }: PageProps) {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar userEmail={user.email} orgName={org?.name} />
+      <Navbar userEmail={userEmail} orgName={org?.name} />
 
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Back */}

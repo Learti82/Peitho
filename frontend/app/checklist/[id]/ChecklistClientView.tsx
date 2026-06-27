@@ -5,7 +5,7 @@ import { clsx } from "clsx";
 import { Progress } from "@/components/ui/Progress";
 import { ChecklistItem } from "@/components/tender/ChecklistItem";
 import { Select } from "@/components/ui/Select";
-import { createClient } from "@/lib/supabase/client";
+import { useSupabaseClient } from "@/lib/supabase/client";
 import type {
   ChecklistItemWithRequirement,
   ChecklistStatus,
@@ -49,6 +49,7 @@ export function ChecklistClientView({
   initialItems,
   tenderId,
 }: ChecklistClientViewProps) {
+  const supabase = useSupabaseClient();
   const [items, setItems] = useState<ChecklistItemWithRequirement[]>(initialItems);
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [categoryFilter, setCategoryFilter] = useState("ALL");
@@ -82,18 +83,16 @@ export function ChecklistClientView({
         applicable.length > 0
           ? Math.round((ready.length / applicable.length) * 100)
           : 0;
-      const supabase = createClient();
       await supabase
         .from("tenders")
         .update({ completion_percentage: pct })
         .eq("id", tenderId);
     },
-    [tenderId]
+    [tenderId, supabase]
   );
 
   async function handleItemUpdated() {
     // Re-fetch items to get latest state
-    const supabase = createClient();
     const { data } = await supabase
       .from("checklist_items")
       .select("*, tender_requirements(*)")

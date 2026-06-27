@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { ClerkProvider } from "@clerk/nextjs";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -19,18 +20,31 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="sq" className="h-full">
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link
-          rel="preconnect"
-          href="https://fonts.gstatic.com"
-          crossOrigin="anonymous"
-        />
-      </head>
-      <body className="h-full font-sans antialiased bg-background">
-        {children}
-      </body>
-    </html>
+    <ClerkProvider
+      appearance={{
+        variables: {
+          colorPrimary: "#1e3a5f",
+        },
+        elements: {
+          formButtonPrimary:
+            "bg-primary hover:bg-primary-700 text-white normal-case",
+          footerActionLink: "text-primary hover:text-primary-700",
+        },
+      }}
+    >
+      <html lang="sq" className="h-full">
+        <head>
+          <link rel="preconnect" href="https://fonts.googleapis.com" />
+          <link
+            rel="preconnect"
+            href="https://fonts.gstatic.com"
+            crossOrigin="anonymous"
+          />
+        </head>
+        <body className="h-full font-sans antialiased bg-background">
+          {children}
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }

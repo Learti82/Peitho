@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { clsx } from "clsx";
 import { LayoutDashboard, Settings, LogOut, FileText } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
+import { useClerk } from "@clerk/nextjs";
 
 interface NavbarProps {
   userEmail?: string;
@@ -27,11 +27,10 @@ const NAV_LINKS = [
 export function Navbar({ userEmail, orgName }: NavbarProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const { signOut } = useClerk();
 
   async function handleLogout() {
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    router.push("/login");
+    await signOut(() => router.push("/login"));
   }
 
   return (
