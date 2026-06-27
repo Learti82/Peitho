@@ -2,7 +2,6 @@
 
 import { useState, useEffect, FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 import { useUser } from "@clerk/nextjs";
 import { useSupabaseClient } from "@/lib/supabase/client";
 import { Input } from "@/components/ui/Input";
@@ -89,16 +88,13 @@ export default function OnboardingPage() {
     <div className="min-h-screen bg-gradient-to-br from-primary-900 via-primary to-primary-700 flex flex-col items-center justify-center p-4">
       <div className="mb-8 flex flex-col items-center gap-3">
         <div className="flex items-center justify-center bg-white rounded-2xl p-2">
-          <Image
-            src="/logo.png"
-            alt="Peitho"
-            width={96}
-            height={96}
-            className="h-20 w-20 object-contain"
-            priority
-          />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.svg" alt="Peitho" className="h-16 w-16 object-contain" />
         </div>
-        <p className="text-primary-200 text-sm">Platforma e Tenderëve</p>
+        <div className="text-center">
+          <h1 className="text-3xl font-bold text-gold tracking-wide">Peitho</h1>
+          <p className="text-primary-200 text-sm mt-0.5">Platforma e Tenderëve</p>
+        </div>
       </div>
 
       <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl p-8">

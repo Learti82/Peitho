@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { clsx } from "clsx";
 import { LayoutDashboard, Settings, LogOut } from "lucide-react";
@@ -41,14 +40,8 @@ export function Navbar({ userEmail, orgName }: NavbarProps) {
           {/* Logo */}
           <Link href="/dashboard" className="flex items-center gap-2.5 group">
             <div className="flex items-center justify-center bg-white rounded-lg p-1">
-              <Image
-                src="/logo.png"
-                alt="Peitho"
-                width={36}
-                height={36}
-                className="h-9 w-9 object-contain"
-                priority
-              />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/logo.svg" alt="Peitho" className="h-8 w-8 object-contain" />
             </div>
             <div>
               <span className="text-xl font-bold text-gold tracking-wide">
