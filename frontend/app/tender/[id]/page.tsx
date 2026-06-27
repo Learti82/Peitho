@@ -198,7 +198,7 @@ export default async function TenderPage({ params }: PageProps) {
         {tender.parsing_warnings && tender.parsing_warnings.length > 0 && (
           <Alert variant="warning" title="Paralajmërime nga analizimi" className="mb-6">
             <ul className="list-disc list-inside space-y-1 mt-1">
-              {tender.parsing_warnings.map((w, i) => (
+              {tender.parsing_warnings.map((w: string, i: number) => (
                 <li key={i} className="text-sm">
                   {w}
                 </li>

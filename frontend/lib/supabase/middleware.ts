@@ -12,9 +12,7 @@ const PROTECTED_PATHS = [
 const AUTH_PATHS = ["/login", "/register"];
 
 export async function updateSession(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({
-    request,
-  });
+  let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -24,14 +22,13 @@ export async function updateSession(request: NextRequest) {
         getAll() {
           return request.cookies.getAll();
         },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) =>
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        setAll(cookiesToSet: any[]) {
+          cookiesToSet.forEach(({ name, value }: { name: string; value: string }) =>
             request.cookies.set(name, value)
           );
-          supabaseResponse = NextResponse.next({
-            request,
-          });
-          cookiesToSet.forEach(({ name, value, options }) =>
+          supabaseResponse = NextResponse.next({ request });
+          cookiesToSet.forEach(({ name, value, options }: { name: string; value: string; options?: object }) =>
             supabaseResponse.cookies.set(name, value, options)
           );
         },
@@ -39,7 +36,6 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
-  // Refresh session if expired
   const {
     data: { user },
   } = await supabase.auth.getUser();
