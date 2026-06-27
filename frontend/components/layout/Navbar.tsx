@@ -41,7 +41,7 @@ export function Navbar({ userEmail, orgName }: NavbarProps) {
           <Link href="/dashboard" className="flex items-center gap-2.5 group">
             <div className="flex items-center justify-center bg-white rounded-lg p-1">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/logo.svg" alt="Peitho" className="h-8 w-8 object-contain" />
+              <img src="/logo.png" alt="Peitho" className="h-8 w-8 object-contain" />
             </div>
             <div>
               <span className="text-xl font-bold text-gold tracking-wide">

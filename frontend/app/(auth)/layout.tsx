@@ -15,7 +15,7 @@ export default function AuthLayout({
       <div className="mb-8 flex flex-col items-center gap-3">
         <div className="flex items-center justify-center bg-white rounded-2xl p-2">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo.svg" alt="Peitho" className="h-16 w-16 object-contain" />
+          <img src="/logo.png" alt="Peitho" className="h-16 w-16 object-contain" />
         </div>
         <div className="text-center">
           <h1 className="text-3xl font-bold text-gold tracking-wide">Peitho</h1>
