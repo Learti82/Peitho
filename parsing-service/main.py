@@ -295,25 +295,15 @@ async def parse_tender(
         len(file_bytes),
     )
 
-    # 3. Save to temp file and extract text
-    with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp:
-        tmp.write(file_bytes)
-        tmp_path = tmp.name
-
+    # 3. Extract text directly from the uploaded bytes (no temp file)
     try:
-        text = extract_text_from_pdf(tmp_path)
+        text = extract_text_from_pdf(file_bytes)
     except Exception as e:
         logger.error("PDF text extraction failed: %s", e)
         raise HTTPException(
             status_code=422,
             detail=f"Failed to extract text from PDF: {e}",
         ) from e
-    finally:
-        import os as _os
-        try:
-            _os.unlink(tmp_path)
-        except OSError:
-            pass
 
     if not text.strip():
         raise HTTPException(

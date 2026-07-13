@@ -38,9 +38,23 @@ def _ocr_page(page: "fitz.Page") -> str:
     return text.strip()
 
 
-def extract_text_from_pdf(pdf_path: str) -> str:
+def _open_document(source):
+    """Open a PDF from a file path (str) or raw bytes, with a clear error."""
+    if not PYMUPDF_AVAILABLE:
+        raise RuntimeError("PyMuPDF is required for PDF parsing")
+    try:
+        if isinstance(source, (bytes, bytearray)):
+            return fitz.open(stream=bytes(source), filetype="pdf")
+        return fitz.open(source)
+    except Exception as e:  # noqa: BLE001
+        raise RuntimeError(
+            f"PDF could not be opened (may be corrupted, encrypted, or not a real PDF): {e}"
+        ) from e
+
+
+def extract_text_from_pdf(source) -> str:
     """
-    Extract all text from a PDF file.
+    Extract all text from a PDF given as a file path (str) or raw bytes.
 
     For each page:
     - First try native text extraction via PyMuPDF.
@@ -49,14 +63,11 @@ def extract_text_from_pdf(pdf_path: str) -> str:
 
     Returns a single string with pages delimited by "--- PAGE N ---" markers.
     """
-    if not PYMUPDF_AVAILABLE:
-        raise RuntimeError("PyMuPDF is required for PDF parsing")
-
-    doc = fitz.open(pdf_path)
+    doc = _open_document(source)
     pages: list[str] = []
     total_pages = len(doc)
 
-    logger.info("Extracting text from PDF: %s (%d pages)", pdf_path, total_pages)
+    logger.info("Extracting text from PDF (%d pages)", total_pages)
 
     for page_num in range(total_pages):
         page = doc[page_num]
