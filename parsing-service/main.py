@@ -80,8 +80,11 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[FRONTEND_URL, "http://localhost:3000"],
-    allow_credentials=True,
+    # Auth is carried in the request body (Clerk JWT), not cookies, so we can
+    # safely allow all origins. This avoids CORS "Failed to fetch" errors when
+    # the frontend is served from Vercel preview/production domains.
+    allow_origins=["*"],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
